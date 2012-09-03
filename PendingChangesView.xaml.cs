@@ -31,6 +31,7 @@ namespace GitScc
         {
             InitializeComponent();
             this.service = BasicSccProvider.GetServiceEx<SccProviderService>();
+            currentInstance = this;
         }
 
         #region Events
@@ -547,8 +548,9 @@ Note: if the file is included project, you need to delete the file from project 
 
             if (!opened) dte.ItemOperations.OpenFile(fileName);
         }
-
     }
+
+
 
     public static class ExtHelper
     {

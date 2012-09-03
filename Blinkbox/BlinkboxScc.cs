@@ -24,11 +24,13 @@ namespace GitScc.Blinkbox
 
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.Execution;
+    using Microsoft.Build.Framework;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.OLE.Interop;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
 
+    using MessageBox = System.Windows.MessageBox;
     using MsVsShell = Microsoft.VisualStudio.Shell;
 
     /// <summary>
@@ -98,7 +100,8 @@ namespace GitScc.Blinkbox
                 }
 
                 // Commit and test button
-                RegisterCommandWithMenuService(menuService, Blinkbox.CommandIds.BlinkboxCommitAndTestId, this.OnCommitAndDeploy);
+                RegisterCommandWithMenuService(menuService, Blinkbox.CommandIds.BlinkboxCommitAndDeployId, this.OnCommitAndDeploy);
+                RegisterCommandWithMenuService(menuService, Blinkbox.CommandIds.BlinkboxDeployId, this.OnDeploy);
             }
         }
 
@@ -132,8 +135,15 @@ namespace GitScc.Blinkbox
             // Process Blinkbox Commands
             switch (commands[0].cmdID)
             {
-                case Blinkbox.CommandIds.BlinkboxCommitAndTestId:
-                    if (GitBash.Exists && this.sccService.IsSolutionGitControlled && this.CommitAndDeployAvailable())
+                case Blinkbox.CommandIds.BlinkboxDeployId:
+                    if (GitBash.Exists && this.DeployProjectAvailable())
+                    {
+                        commandFlags |= OLECMDF.OLECMDF_ENABLED;
+                    }
+                    break;
+
+                case Blinkbox.CommandIds.BlinkboxCommitAndDeployId:
+                    if (GitBash.Exists && this.sccService.IsSolutionGitControlled && this.DeployProjectAvailable())
                     {
                         commandFlags |= OLECMDF.OLECMDF_ENABLED;
                     }
@@ -141,6 +151,7 @@ namespace GitScc.Blinkbox
 
                 case Blinkbox.CommandIds.GitTfsCheckinButtonId:
                 case Blinkbox.CommandIds.GitTfsGetLatestButtonId:
+                case Blinkbox.CommandIds.GitTfsCleanWorkspacesButtonId:
                 case Blinkbox.CommandIds.GitTfsMenu:
                 case Blinkbox.CommandIds.GitTfsMenuGroup:
                     // Disable controls if git-tfs is not found. 
@@ -173,10 +184,10 @@ namespace GitScc.Blinkbox
         }
 
         /// <summary>
-        /// Checks whether a postCommitDeploy project is available.
+        /// Checks whether a deploy project is available.
         /// </summary>
-        /// <returns>true if the solution has devDeployable projects.</returns>
-        private bool CommitAndDeployAvailable()
+        /// <returns>true if the solution has a deploy project.</returns>
+        private bool DeployProjectAvailable()
         {
             var solutionDir = this.GetSolutionDirectory();
             return File.Exists(solutionDir + "\\" + BlinkboxSccOptions.Current.PostCommitDeployProjectName);
@@ -190,6 +201,23 @@ namespace GitScc.Blinkbox
         private T GetToolWindowPane<T>() where T : ToolWindowPane
         {
             return (T)this.basicSccProvider.FindToolWindow(typeof(T), 0, true);
+        }
+
+        /// <summary>
+        /// Handles the Deploy button. 
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+        private void OnDeploy(object sender, EventArgs e)
+        {
+            var commit = new OnCommitArgs()
+                {
+                    Hash = this.GetLatestCommitHash(),
+                    Message = "Re-deploy"
+                };
+
+            NotificationWriter.Clear();
+            this.Deploy(commit);
         }
 
         /// <summary>
@@ -220,62 +248,91 @@ namespace GitScc.Blinkbox
             if (commit.Success)
             {
                 commit.Hash = this.GetLatestCommitHash();
-
-                try
-                {
-                    // Look for a deploy project
-                    var buildProjectFileName = this.GetSolutionDirectory() + "\\" + BlinkboxSccOptions.Current.PostCommitDeployProjectName;
-                    if (!File.Exists(buildProjectFileName))
-                    {
-                        MessageBox.Show("build project not found", "Deploy abandoned", MessageBoxButton.OK, MessageBoxImage.Error);
-                        return;
-                    }
-
-                    // Initisalise our own project collection which can be cleaned up after the build. This is to prevent caching of the project. 
-                    using (var projectCollection = new ProjectCollection(Microsoft.Build.Evaluation.ProjectCollection.GlobalProjectCollection.ToolsetLocations))
-                    {
-                        var commitComment = Regex.Replace(commit.Message, @"\r|\n|\t", string.Empty);
-                        commitComment = HttpUtility.UrlEncode(commitComment.Substring(0, commitComment.Length > 80 ? 80 : commitComment.Length));
-
-                        // Global properties need to be set before the projects are instantiated. 
-                        var globalProperties = new Dictionary<string, string>
-                            {
-                                { BlinkboxSccOptions.Current.CommitGuidPropertyName, commit.Hash }, 
-                                { BlinkboxSccOptions.Current.CommitCommentPropertyName, commitComment }
-                            };
-                        var msbuildProject = new ProjectInstance(buildProjectFileName, globalProperties, "4.0", projectCollection);
-
-                        // Build it
-                        WriteToStatusBar("Build " + Path.GetFileNameWithoutExtension(msbuildProject.FullPath));
-                        var buildRequest = new BuildRequestData(msbuildProject, new string[] { });
-                        var result = BuildManager.DefaultBuildManager.Build(new BuildParameters(projectCollection), buildRequest);
-
-                        if (result.OverallResult == BuildResultCode.Failure)
-                        {
-                            string message = result.Exception == null ? "Unknown error" : result.Exception.Message;
-                            MessageBox.Show(message, "Build failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                            return;
-                        }
-
-                        // Launch urls in browser
-                        var launchUrls = msbuildProject.Items.Where(pii => pii.ItemType == BlinkboxSccOptions.Current.UrlToLaunchPropertyName);
-                        foreach (var launchItem in launchUrls)
-                        {
-                            this.LaunchBrowser(launchItem.EvaluatedInclude);
-                        }
-
-                        // Clean up project to prevent caching.
-                        projectCollection.UnloadAllProjects();
-                    }
-                }
-                catch (Exception exc)
-                {
-                    MessageBox.Show(exc.Message, "Build failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                NotificationWriter.Clear();
+                NotificationWriter.Write("Commit " + commit.Hash + " successful");
+                this.Deploy(commit);
             }
 
             // Unsubscribe from successful commit event
             BlinkboxSccHooks.OnCommit -= this.DeploySuccessfulCommit;
+        }
+
+        /// <summary>
+        /// Builds and deploys.
+        /// </summary>
+        /// <param name="commit">
+        /// The commit. Supplied if called after a successful commit, otherwise a new instance is created. 
+        /// </param>
+        /// <returns>
+        /// true if the deploy was successful.
+        /// </returns>
+        private bool Deploy(OnCommitArgs commit)
+        {
+            NotificationWriter.Write("Begin build and deploy to " + commit.Hash);
+
+            try
+            {
+                // Look for a deploy project
+                var buildProjectFileName = this.GetSolutionDirectory() + "\\" + BlinkboxSccOptions.Current.PostCommitDeployProjectName;
+                if (!File.Exists(buildProjectFileName))
+                {
+                    MessageBox.Show("build project not found", "Deploy abandoned", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
+                }
+
+                NotificationWriter.Write("Deploy project found at " + buildProjectFileName);
+
+                // Initisalise our own project collection which can be cleaned up after the build. This is to prevent caching of the project. 
+                using (var projectCollection = new ProjectCollection(Microsoft.Build.Evaluation.ProjectCollection.GlobalProjectCollection.ToolsetLocations))
+                {
+                    var commitComment = Regex.Replace(commit.Message, @"\r|\n|\t", string.Empty);
+                    commitComment = HttpUtility.UrlEncode(commitComment.Substring(0, commitComment.Length > 80 ? 80 : commitComment.Length));
+
+                    // Global properties need to be set before the projects are instantiated. 
+                    var globalProperties = new Dictionary<string, string>
+                        {
+                            { BlinkboxSccOptions.Current.CommitGuidPropertyName, commit.Hash }, 
+                            { BlinkboxSccOptions.Current.CommitCommentPropertyName, commitComment }
+                        };
+                    var msbuildProject = new ProjectInstance(buildProjectFileName, globalProperties, "4.0", projectCollection);
+
+                    // Build it
+                    WriteToStatusBar("Building " + Path.GetFileNameWithoutExtension(msbuildProject.FullPath));
+                    var buildRequest = new BuildRequestData(msbuildProject, new string[] { });
+
+                    var buildParams = new BuildParameters(projectCollection);
+                    buildParams.Loggers = new List<ILogger>() { new BuildNotificationLogger() { Verbosity = LoggerVerbosity.Minimal } };
+
+                    var result = BuildManager.DefaultBuildManager.Build(buildParams, buildRequest);
+
+                    if (result.OverallResult == BuildResultCode.Failure)
+                    {
+                        string message = result.Exception == null 
+                            ? "An error occurred during build; please see the pending changes window for details." 
+                            : result.Exception.Message;
+                        MessageBox.Show(message, "Build failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return false;
+                    }
+
+                    // Launch urls in browser
+                    var launchUrls = msbuildProject.Items.Where(pii => pii.ItemType == BlinkboxSccOptions.Current.UrlToLaunchPropertyName);
+                    foreach (var launchItem in launchUrls)
+                    {
+                        this.LaunchBrowser(launchItem.EvaluatedInclude);
+                    }
+
+                    // Clean up project to prevent caching.
+                    projectCollection.UnloadAllProjects();
+                    projectCollection.UnregisterAllLoggers();
+                }
+
+                return true;
+            }
+            catch (Exception exc)
+            {
+                MessageBox.Show(exc.Message, "Build failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
         }
 
         /// <summary>

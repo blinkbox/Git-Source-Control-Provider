@@ -14,8 +14,7 @@ namespace GitScc
             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
             "gitscc.config");
 
-        public string GitBashPath { get; set; }
-        public string GitTfsPath { get; set; }
+        public string GitBashPath       { get; set; }
         public string GitExtensionPath  { get; set; }
         public string DifftoolPath      { get; set; }
         public string TortoiseGitPath   { get; set; }
@@ -79,13 +78,6 @@ namespace GitScc
                 GitBashPath = TryFindFile(new string[]{
                     @"C:\Program Files\Git\bin\sh.exe",
                     @"C:\Program Files (x86)\Git\bin\sh.exe",
-                });
-            }
-            if (string.IsNullOrEmpty(GitTfsPath))
-            {
-                GitTfsPath = TryFindFile(new string[]{
-                    @"C:\Program Files\Git-tfs\git-tfs.exe",
-                    @"C:\Program Files (x86)\Git-tfs\git-tfs.exe",
                 });
             }
             if (string.IsNullOrEmpty(GitExtensionPath))

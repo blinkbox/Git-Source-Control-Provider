@@ -16,7 +16,7 @@ namespace GitScc.Blinkbox
         /// <summary>
         /// Commands which appear in the git tfs menu
         /// </summary>
-        private static readonly List<GitTfsCommand> menuOptions = new List<GitTfsCommand> { Commands.Checkin, Commands.GetLatest };
+        private static readonly List<GitTfsCommand> menuOptions = new List<GitTfsCommand> { Commands.Checkin, Commands.GetLatest, Commands.CleanWorkspace };
 
         /// <summary>
         /// Gets the menu options.
@@ -33,16 +33,32 @@ namespace GitScc.Blinkbox
         /// <summary>
         /// Runs a command in the git tfs commandline environment.
         /// </summary>
-        /// <param name="command">The command.</param>
-        /// <param name="workingDirectory">The working directory.</param>
+        /// <param name="command">
+        /// The command.
+        /// </param>
+        /// <param name="workingDirectory">
+        /// The working directory.
+        /// </param>
         public static void RunGitTfsCommand(string command, string workingDirectory)
         {
-            var processStartInfo = new ProcessStartInfo("cmd.exe", "/k git tfs " + command);
-            processStartInfo.UseShellExecute = false;
-            processStartInfo.CreateNoWindow = false;
-            processStartInfo.WorkingDirectory = workingDirectory;
-            processStartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-            System.Diagnostics.Process.Start(processStartInfo);
+            var process = new System.Diagnostics.Process();
+            process.StartInfo = new ProcessStartInfo("cmd.exe", "/k git tfs " + command);
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.WorkingDirectory = workingDirectory;
+            process.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+
+            // Write output to the pending changes window
+            NotificationWriter.Clear();
+            NotificationWriter.NewSection("Git-Tfs " + command);
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.OutputDataReceived += (sender, args) => NotificationWriter.Write(args.Data);
+            process.ErrorDataReceived += (sender, args) => NotificationWriter.Write(args.Data);
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
         }
 
         /// <summary>
@@ -59,6 +75,11 @@ namespace GitScc.Blinkbox
             /// Get latest command syntax.
             /// </summary>
             public static readonly GitTfsCommand GetLatest = new GitTfsCommand { Name = "Get Latest", CommandText = "pull", CommandId = Blinkbox.CommandIds.GitTfsGetLatestButtonId };
+
+            /// <summary>
+            /// cleanup workspace command syntax.
+            /// </summary>
+            public static readonly GitTfsCommand CleanWorkspace = new GitTfsCommand { Name = "Clean Workspace", CommandText = "cleanup-workspaces", CommandId = Blinkbox.CommandIds.GitTfsCleanWorkspacesButtonId };
         }
       
         /// <summary>

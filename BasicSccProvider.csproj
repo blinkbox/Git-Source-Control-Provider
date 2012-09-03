@@ -94,6 +94,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Blinkbox\CommandIds.cs" />
+    <Compile Include="Blinkbox\BuildNotificationLogger.cs" />
+    <Compile Include="Blinkbox\NotificationWriter.cs" />
     <Compile Include="Blinkbox\Events\BlinkboxSccHooks.cs" />
     <Compile Include="Blinkbox\BlinkboxScc.cs" />
     <Compile Include="Blinkbox\Events\OnPackageInitialiseArgs.cs" />
@@ -106,6 +108,9 @@
     </Compile>
     <Compile Include="Blinkbox\Options\BlinkboxOptionsPage.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PendingChangesView.bb.cs" >
+      <DependentUpon>PendingChangesView.xaml</DependentUpon>
     </Compile>
     <Compile Include="GitToolCommands.cs" />
     <Compile Include="GitSccOptions.cs" />
