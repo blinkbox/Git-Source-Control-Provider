@@ -20,10 +20,10 @@
 
     <Grid Name="grid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="130" />
+            <ColumnDefinition Width="160" />
             <ColumnDefinition Width="348" />
             <ColumnDefinition Width="108" />
-            <ColumnDefinition Width="214*" />
+            <ColumnDefinition Width="184*" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -50,8 +50,8 @@
             <Hyperlink Name="SaveButton" Click="SaveButton_Click">Save</Hyperlink>
         </TextBlock>
        
-        <Label Content="TestSwarm username:" Grid.Row="1"  />
-        <Label Content="TestSwarm password:" Grid.Row="2" />
+        <Label Content="TestSwarm Project ID:" Grid.Row="1"  />
+        <Label Content="TestSwarm Auth Token:" Grid.Row="2" />
         <Label Content="TestSwarm tags:" Grid.Row="3" />
         <Label Content="TestSwarm Url:" Grid.Row="4" />
         <Label Content="Feature Files:" Grid.Row="5" />
@@ -60,13 +60,14 @@
         <Label Content="Runner mode:" Grid.Row="8" />
         <Label Content="Test submission script:" Grid.Row="9" />
 
-        <TextBox Name="testSwarmUsername" Grid.Row="1" Grid.Column="1" 
-                             Text="{Binding solutionUserSettings.TestSwarmUsername, Mode=TwoWay}" />
-        <PasswordBox Name="testSwarmPassword" Grid.Row="2" Grid.Column="1" />
+        <TextBox Name="testSwarmProjectId" Grid.Row="1" Grid.Column="1" 
+                             Text="{Binding Path=solutionUserSettings.TestSwarmProjectId, Mode=TwoWay}" />
+        <TextBox Name="testSwarmAuthToken" Grid.Row="2" Grid.Column="1" 
+                             Text="{Binding Path=solutionUserSettings.TestSwarmAuthToken, Mode=TwoWay}" />
         <TextBox Name="testSwarmTags" Grid.Row="3" Grid.Column="1" 
                              Text="{Binding Path=solutionUserSettings.TestSwarmTags, Mode=TwoWay}" />
         <TextBox Name="testSwarmUrl" Grid.Row="4" Grid.Column="1" 
-                             Text="{Binding solutionSettings.TestSwarmUrl, Mode=TwoWay}" />
+                             Text="{Binding Path=solutionUserSettings.TestSwarmUrl, Mode=TwoWay}" />
         <TextBox Name="featurePath" Grid.Row="5" Grid.Column="1" 
                              Text="{Binding Path=solutionSettings.FeaturePath, Mode=TwoWay}" />
         <TextBox Name="featureSubPath" Grid.Row="6" Grid.Column="1" 

@@ -119,7 +119,7 @@ namespace GitScc.Blinkbox.Options
             this.TestBrowserSets = string.IsNullOrEmpty(this.TestBrowserSets) ? "default" : this.TestBrowserSets;
             this.CurrentBranch = string.IsNullOrEmpty(this.CurrentBranch) ? "v0" : this.CurrentBranch;
             this.TestRunnerMode = string.IsNullOrEmpty(this.TestRunnerMode) ? "appfirst" : this.TestRunnerMode;
-            this.TestSwarmTags = string.IsNullOrEmpty(this.TestSwarmTags) ? "devcomplete" : this.TestSwarmTags;
+            this.TestSwarmTags = string.IsNullOrEmpty(this.TestSwarmTags) ? "devcomplete,~manualtest,~devdb" : this.TestSwarmTags;
             this.DeployProjectLocation = string.IsNullOrEmpty(this.DeployProjectLocation) ? "deploy\\deployLocal.ps1" : this.DeployProjectLocation;
             this.CurrentRelease = string.IsNullOrEmpty(this.CurrentRelease) ? "v0.0.0" : this.CurrentRelease;
             this.TestSubmissionScript = string.IsNullOrEmpty(this.TestSubmissionScript) ? "deploy\\testSwarm.ps1" : this.TestSubmissionScript;
