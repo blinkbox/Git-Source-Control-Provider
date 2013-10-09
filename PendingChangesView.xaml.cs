@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -10,10 +11,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Microsoft.VisualStudio.TextManager.Interop;
-using NGit.Api;
 using GitScc.UI;
-using System.Diagnostics;
 
 namespace GitScc
 {
@@ -31,7 +29,7 @@ namespace GitScc
         {
             InitializeComponent();
             this.service = BasicSccProvider.GetServiceEx<SccProviderService>();
-            currentInstance = this;
+            this.InitialiseBlinkboxExtensions();
         }
 
         #region Events
@@ -43,13 +41,26 @@ namespace GitScc
             sortMemberPath = e.Column.SortMemberPath;
             sortDirection = e.Column.SortDirection != ListSortDirection.Ascending ?
                 ListSortDirection.Ascending : ListSortDirection.Descending;
+        }
 
+        private void dataGrid1_KeyDown(object sender, KeyEventArgs e)
+        {
+            var selectedItem = this.dataGrid1.SelectedItem as GitFile;
+            if (selectedItem == null || e.Key != Key.Space) return;
+            var selected = !selectedItem.IsSelected;
+            foreach (var item in this.dataGrid1.SelectedItems)
+            {
+                ((GitFile)item).IsSelected = selected;
+            }
         }
 
         private void checkBoxSelected_Click(object sender, RoutedEventArgs e)
         {
             var checkBox = sender as CheckBox;
-            ((GitFile)this.dataGrid1.SelectedItem).IsSelected = checkBox.IsChecked == true;
+            foreach (var item in this.dataGrid1.SelectedItems)
+            {
+                ((GitFile)item).IsSelected = checkBox.IsChecked == true;
+            }
         }
 
         private void checkBoxAllStaged_Click(object sender, RoutedEventArgs e)
@@ -85,8 +96,15 @@ namespace GitScc
                     var tmpFileName = tracker.DiffFile(fileName);
                     if (!string.IsNullOrWhiteSpace(tmpFileName) && File.Exists(tmpFileName))
                     {
-                        diffLines = File.ReadAllLines(tmpFileName);
-                        this.ShowFile(tmpFileName);
+                        if (new FileInfo(tmpFileName).Length > 2 * 1024 * 1024)
+                        {
+                            this.DiffEditor.Text = "File is too big to display: " + fileName;
+                        }
+                        else
+                        {
+                            diffLines = File.ReadAllLines(tmpFileName);
+                            this.ShowFile(tmpFileName);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -100,6 +118,7 @@ namespace GitScc
             this.Dispatcher.BeginInvoke(act, DispatcherPriority.ApplicationIdle);
         }
 
+/* We are implementing this in the blinkbox partial class
         private void dataGrid1_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             GetSelectedFileFullName((fileName) =>
@@ -108,6 +127,7 @@ namespace GitScc
             });
 
         }
+*/
 
         private void ClearEditor()
         {
@@ -140,12 +160,13 @@ namespace GitScc
             return selectedItem.FileName;
         }
 
-        private void GetSelectedFileName(Action<string> action)
+        private void GetSelectedFileName(Action<string> action, bool changeToGitPathSeparator = false)
         {
             var fileName = GetSelectedFileName();
             if (fileName == null) return;
             try
             {
+                if (changeToGitPathSeparator) fileName.Replace("\\", "/");
                 action(fileName);
             }
             catch (Exception ex)
@@ -156,20 +177,24 @@ namespace GitScc
 
         private void GetSelectedFileFullName(Action<string> action, bool fileMustExists = true)
         {
-            var fileName = GetSelectedFileName();
-            if (fileName == null) return;
-            fileName = System.IO.Path.Combine(this.tracker.GitWorkingDirectory, fileName);
-
-            if (fileMustExists && !File.Exists(fileName)) return;
             try
             {
-                action(fileName);
+                var files = this.dataGrid1.SelectedItems.Cast<GitFile>()
+                    .Select(item => System.IO.Path.Combine(this.tracker.GitWorkingDirectory, item.FileName))
+                    .ToList();
+
+                foreach (var fileName in files)
+                {
+                    if (fileMustExists && !File.Exists(fileName)) return;
+                    action(fileName);
+                }
             }
             catch (Exception ex)
             {
                 ShowStatusMessage(ex.Message);
             }
         }
+
         #endregion
 
         #region Git functions
@@ -177,6 +202,8 @@ namespace GitScc
         DateTime lastTimeRefresh = DateTime.Now.AddDays(-1);
         internal void Refresh(GitFileStatusTracker tracker)
         {
+            this.label3.Content = "Changed files";
+
             this.tracker = tracker;
 
             if (!GitBash.Exists)
@@ -199,7 +226,7 @@ namespace GitScc
             {
 
                 service.NoRefresh = true;
-                ShowStatusMessage("Getting changed files ...");
+                ////ShowStatusMessage("Getting changed files ...");
 
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
@@ -233,6 +260,13 @@ namespace GitScc
                     });
 
                     ShowStatusMessage("");
+
+                    var changed = tracker.ChangedFiles;
+                    this.label3.Content = string.Format("Changed files: ({0}) +{1} ~{2} -{3} !{4}", tracker.CurrentBranch,
+                        changed.Where(f => f.Status == GitFileStatus.New || f.Status == GitFileStatus.Added).Count(),
+                        changed.Where(f => f.Status == GitFileStatus.Modified || f.Status == GitFileStatus.Staged).Count(),
+                        changed.Where(f => f.Status == GitFileStatus.Deleted || f.Status == GitFileStatus.Removed).Count(),
+                        changed.Where(f => f.Status == GitFileStatus.Conflict).Count());
                 }
                 catch (Exception ex)
                 {
@@ -295,20 +329,18 @@ namespace GitScc
                 return true;
         }
 
+
         internal void Commit()
         {
-            var commitArgs = new Blinkbox.Events.OnCommitArgs { Message = this.Comments };
             service.NoRefresh = true;
-            if (HasComments() && StageSelectedFiles())
+            if (HasComments() && StageSelectedFiles(true))
             {
                 try
                 {
                     ShowStatusMessage("Committing ...");
-                    var id = tracker.Commit(Comments);
+                    var id = tracker.Commit(Comments, false, chkSignOff.IsChecked == true);
                     ShowStatusMessage("Commit successfully. Commit Hash: " + id);
                     ClearUI();
-                    commitArgs.Success = true;
-                    commitArgs.Id = id;
                 }
                 catch (Exception ex)
                 {
@@ -319,7 +351,6 @@ namespace GitScc
             service.NoRefresh = false;
             //service.lastTimeRefresh = DateTime.Now;
             service.NodesGlyphsDirty = true; // force refresh
-            Blinkbox.Events.BlinkboxSccHooks.TriggerCommit(this, commitArgs);
         }
 
         internal void AmendCommit()
@@ -332,12 +363,12 @@ namespace GitScc
             else
             {
                 service.NoRefresh = true;
-                if (StageSelectedFiles())
-                {
+                StageSelectedFiles(false);
+
                     try
                     {
                         ShowStatusMessage("Amending last Commit ...");
-                        var id = tracker.AmendCommit(Comments);
+                        var id = tracker.Commit(Comments, true, chkSignOff.IsChecked == true);
                         ShowStatusMessage("Amend last commit successfully. Commit Hash: " + id);
                         ClearUI();
                     }
@@ -346,14 +377,14 @@ namespace GitScc
                         MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                         ShowStatusMessage(ex.Message);
                     }
-                }
+
                 service.NoRefresh = false;
                 //service.lastTimeRefresh = DateTime.Now;
                 service.NodesGlyphsDirty = true; // force refresh
             }
         }
 
-        private bool StageSelectedFiles()
+        private bool StageSelectedFiles(bool showWarning)
         {
             var unstaged = this.dataGrid1.Items.Cast<GitFile>()
                                .Where(item => item.IsSelected && !item.IsStaged)
@@ -370,7 +401,7 @@ namespace GitScc
             bool hasStaged = tracker == null ? false :
                              tracker.ChangedFiles.Any(f => f.IsStaged);
 
-            if (!hasStaged)
+            if (!hasStaged && showWarning)
             {
                 MessageBox.Show("No file has been staged for commit.", "Commit",
                     MessageBoxButton.OK, MessageBoxImage.Exclamation);
@@ -390,32 +421,45 @@ namespace GitScc
         private void dataGrid1_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             if (this.dataGrid1.SelectedCells.Count == 0) return;
-            var selectedItem = this.dataGrid1.SelectedCells[0].Item as GitFile;
-            if (selectedItem == null) return;
 
-            switch (selectedItem.Status)
+            if (this.dataGrid1.SelectedItems.Count == 1)
             {
-                case GitFileStatus.Added:
-                case GitFileStatus.New:
-                    menuCompare.IsEnabled = menuUndo.IsEnabled = false;
-                    break;
+                var selectedItem = this.dataGrid1.SelectedCells[0].Item as GitFile;
+                if (selectedItem == null) return;
 
-                case GitFileStatus.Modified:
-                case GitFileStatus.Staged:
-                    menuCompare.IsEnabled = menuUndo.IsEnabled = true;
-                    break;
+                switch (selectedItem.Status)
+                {
+                    case GitFileStatus.Added:
+                    case GitFileStatus.New:
+                        menuCompare.IsEnabled = menuUndo.IsEnabled = false;
+                        break;
 
-                case GitFileStatus.Removed:
-                case GitFileStatus.Deleted:
-                    menuCompare.IsEnabled = false;
-                    menuUndo.IsEnabled = true;
-                    break;
+                    case GitFileStatus.Modified:
+                    case GitFileStatus.Staged:
+                        menuCompare.IsEnabled = menuUndo.IsEnabled = true;
+                        break;
+
+                    case GitFileStatus.Removed:
+                    case GitFileStatus.Deleted:
+                        menuCompare.IsEnabled = false;
+                        menuUndo.IsEnabled = true;
+                        break;
+                }
+
+                menuStage.Visibility = selectedItem.IsStaged ? Visibility.Collapsed : Visibility.Visible;
+                menuUnstage.Visibility = !selectedItem.IsStaged ? Visibility.Collapsed : Visibility.Visible;
+                menuDeleteFile.Visibility = (selectedItem.Status == GitFileStatus.New || selectedItem.Status == GitFileStatus.Modified) ?
+                    Visibility.Visible : Visibility.Collapsed;
             }
-
-            menuStage.Visibility = selectedItem.IsStaged ? Visibility.Collapsed : Visibility.Visible;
-            menuUnstage.Visibility = !selectedItem.IsStaged ? Visibility.Collapsed : Visibility.Visible;
-            menuDeleteFile.Visibility = (selectedItem.Status == GitFileStatus.New || selectedItem.Status == GitFileStatus.Modified) ?
-                Visibility.Visible : Visibility.Collapsed;
+            else
+            {
+                menuStage.Visibility =
+                menuUnstage.Visibility =
+                menuDeleteFile.Visibility = Visibility.Visible;
+                menuUndo.IsEnabled = true;
+                menuIgnore.IsEnabled = false;
+                menuCompare.IsEnabled = false;
+            }
         }
 
         private void menuCompare_Click(object sender, RoutedEventArgs e)
@@ -475,6 +519,37 @@ Note: if the file is included project, you need to delete the file from project 
 
         #endregion
 
+        #region Ignore files
+        private void menuIgnore_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void menuIgnoreFile_Click(object sender, RoutedEventArgs e)
+        {
+            GetSelectedFileName((fileName) =>
+            {
+                tracker.AddIgnoreItem(fileName);
+            }, true);
+        }
+
+        private void menuIgnoreFilePath_Click(object sender, RoutedEventArgs e)
+        {
+            GetSelectedFileName((fileName) =>
+            {
+                tracker.AddIgnoreItem(Path.GetDirectoryName(fileName) + "*/");
+            }, true);
+        }
+
+        private void menuIgnoreFileExt_Click(object sender, RoutedEventArgs e)
+        {
+            GetSelectedFileName((fileName) =>
+            {
+                tracker.AddIgnoreItem("*" + Path.GetExtension(fileName));
+            }, true);
+        }
+        #endregion
+
         private void DiffEditor_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             
@@ -523,7 +598,7 @@ Note: if the file is included project, you need to delete the file from project 
             });
         }
 
-        private void OpenFile(string fileName)
+        internal void OpenFile(string fileName)
         {
             if (string.IsNullOrWhiteSpace(fileName)) return;
 
@@ -537,7 +612,7 @@ Note: if the file is included project, you need to delete the file from project 
                 {
                     if (string.Compare(item.FileNames[0], fileName, true) == 0)
                     {
-                        dynamic  wnd = item.Open(EnvDTE.Constants.vsViewKindPrimary);
+                        dynamic wnd = item.Open(EnvDTE.Constants.vsViewKindPrimary);
                         wnd.Activate();
                         opened = true;
                         break;
@@ -549,8 +624,6 @@ Note: if the file is included project, you need to delete the file from project 
             if (!opened) dte.ItemOperations.OpenFile(fileName);
         }
     }
-
-
 
     public static class ExtHelper
     {

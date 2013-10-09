@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SolutionSettings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <TestSwarmUrl>http://battleship/testswarm</TestSwarmUrl>
+  <FeaturePath>test\AngularClient.Test.Artefacts\Features</FeaturePath>
+  <TestBrowserSets>default,currentDesktop</TestBrowserSets>
+  <CurrentBranch>v0</CurrentBranch>
+  <TestRunnerMode>appfirst</TestRunnerMode>
+  <TestSwarmTags>devcomplete</TestSwarmTags>
+  <DeployProjectLocation>deploy\deployLocal.ps1</DeployProjectLocation>
+  <CurrentRelease>v0.0.0</CurrentRelease>
+  <TestSubmissionScript>deploy\testSwarm.ps1</TestSubmissionScript>
+  <LocalAppUrlTemplate>http://tv-{MachineName}.bbdev1.com/Client/{BuildLabel}</LocalAppUrlTemplate>
+  <LocalTestUrlTemplate>http://tv-{MachineName}.bbdev1.com/Client/{BuildLabel}/Test/Index.html?runnerMode={RunnerMode}&amp;tags={Tags}</LocalTestUrlTemplate>
+</SolutionSettings>

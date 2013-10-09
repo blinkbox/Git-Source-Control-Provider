@@ -118,7 +118,7 @@ namespace GitScc {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Git Pending Changes.
+        ///   Looks up a localized string similar to BB Git Source Control.
         /// </summary>
         internal static string PendingChangesToolWindowCaption {
             get {

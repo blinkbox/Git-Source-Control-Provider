@@ -115,7 +115,7 @@ namespace GitScc.Blinkbox.Options
             BlinkboxSccOptions.Current.UrlToLaunchPropertyName = this.urlToLaunchPropertyNameTextBox.Text;
             BlinkboxSccOptions.Current.PostCommitDeployProjectName = this.postCommitDeployProjectNameTextbox.Text;
 
-            BlinkboxSccOptions.Current.SaveConfig();
+            BlinkboxSccOptions.Current.Save();
 
             var sccProviderService = (SccProviderService)GetService(typeof(SccProviderService));
             if (sccProviderService != null)

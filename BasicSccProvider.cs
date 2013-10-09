@@ -50,7 +50,7 @@ namespace GitScc
     //[ProvideAutoLoad(UIContextGuids.SolutionExists)]
     // Declare the package guid
     [Guid("C4128D99-2000-41D1-A6C3-704E6C1A3DE2")]
-    public class BasicSccProvider : MsVsShell.Package, IOleCommandTarget
+    public partial class BasicSccProvider : MsVsShell.Package, IOleCommandTarget
     {
         private SccOnIdleEvent _OnIdleEvent = new SccOnIdleEvent();
 
@@ -79,7 +79,7 @@ namespace GitScc
 
             ((IServiceContainer)this).AddService(typeof(SccProviderService), sccService, true);
 
-            Blinkbox.Events.BlinkboxSccHooks.TriggerOnPackageInitialise(this, new Blinkbox.Events.OnPackageInitialiseArgs() { PackageInstance = this, SccService = this.sccService });
+            this.InitialiseBlinkboxExtensions();
             
             // Add our command handlers for menu (commands must exist in the .vsct file)
             MsVsShell.OleMenuCommandService mcs = GetService(typeof(IMenuCommandService)) as MsVsShell.OleMenuCommandService;
@@ -156,7 +156,7 @@ namespace GitScc
                 menu = new MenuCommand(new EventHandler(OnAbout), cmd);
                 mcs.AddCommand(menu);
 
-                Blinkbox.Events.BlinkboxSccHooks.TriggerRegisterCommands(this, new Blinkbox.Events.OnRegisterCommandsArgs() { MenuService = mcs });
+                RegisterComponents(mcs);
             }
 
 
@@ -211,10 +211,10 @@ namespace GitScc
             }
 
             // Call hook to query additional commands first. 
-            var result = Blinkbox.Events.BlinkboxSccHooks.QueryCommandStatus(guidCmdGroup, prgCmds, cmdf, pCmdText);
+            var result = this.QueryBlinkboxCommandStatus(guidCmdGroup, prgCmds, cmdf, pCmdText);
             if (result != (int)Microsoft.VisualStudio.OLE.Interop.Constants.OLECMDERR_E_NOTSUPPORTED)
             {
-                // Handled in the hook
+                // Handled by blinkbox extensions
                 return result;
             }
 
@@ -340,7 +340,7 @@ namespace GitScc
         private void OnRefreshCommand(object sender, EventArgs e)
         {
             sccService.NoRefresh = false;
-            sccService.Refresh();
+            sccService.Refresh(true);
         }
 
         private void OnCompareCommand(object sender, EventArgs e)
@@ -447,12 +447,23 @@ namespace GitScc
             path = Path.Combine(path, "Dragon.pkg");
             var tmpPath = Path.Combine(Path.GetTempPath(), "Dragon.exe");
 
-            try
+            var needCopy = !File.Exists(tmpPath);
+            if(!needCopy)
             {
-                File.Copy(path, tmpPath, true);
+                var date1 = File.GetLastWriteTimeUtc(path);
+                var date2 = File.GetLastWriteTimeUtc(tmpPath);
+                needCopy = (date1>date2);
             }
-            catch // try copy file silently
+
+            if (needCopy)
             {
+                try
+                {
+                    File.Copy(path, tmpPath, true);
+                }
+                catch // try copy file silently
+                {
+                }
             }
 
             if (File.Exists(tmpPath))
@@ -488,11 +499,13 @@ namespace GitScc
         private void OnCommitCommand(object sender, EventArgs e)
         {
             GetToolWindowPane<PendingChangesToolWindow>().OnCommitCommand();
+            this.sccService.Refresh(true);
         }
 
         private void OnAmendCommitCommand(object sender, EventArgs e)
         {
             GetToolWindowPane<PendingChangesToolWindow>().OnAmendCommitCommand();
+            this.sccService.Refresh(true);
         }
 
         #endregion

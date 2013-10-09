@@ -2,14 +2,11 @@
 // <copyright file="BuildNotificationLogger.cs" company="blinkbox">
 //   TODO: Update copyright text.
 // </copyright>
-// <summary>
-// </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
 namespace GitScc.Blinkbox
 {
     using System;
-    using System.Diagnostics;
 
     using Microsoft.Build.Framework;
 
@@ -21,7 +18,12 @@ namespace GitScc.Blinkbox
         /// <summary>
         /// Inserts a new line and a tab. 
         /// </summary>
-        private static readonly string newLineIndent = Environment.NewLine + "\t";
+        private static readonly string NewLineIndent = Environment.NewLine + "\t";
+
+        /// <summary>
+        /// Instance of the  <see cref="NotificationService"/>
+        /// </summary>
+        private readonly NotificationService notificationService;
 
         /// <summary>
         /// Gets or sets Verbosity.
@@ -41,6 +43,15 @@ namespace GitScc.Blinkbox
             set;
         }
 
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BuildNotificationLogger"/> class.
+        /// </summary>
+        /// <param name="notifications">The notifications.</param>
+        public BuildNotificationLogger(NotificationService notifications)
+        {
+            this.notificationService = notifications;
+        }
 
         /// <summary>
         /// Initialises the logger.
@@ -71,7 +82,7 @@ namespace GitScc.Blinkbox
         {
             if (this.OutputMessage(importance))
             {
-                NotificationWriter.Write(message);
+                this.notificationService.AddMessage(message);
             }
         }
 
@@ -83,9 +94,9 @@ namespace GitScc.Blinkbox
         /// </param>
         public void HandleError(BuildErrorEventArgs error)
         {
-            string template = Environment.NewLine + "Error: \"{0}\"" + newLineIndent + "in file {1} line {2}" + newLineIndent + "in project {3}" + Environment.NewLine;
+            string template = Environment.NewLine + "Error: \"{0}\"" + NewLineIndent + "in file {1} line {2}" + NewLineIndent + "in project {3}" + Environment.NewLine;
             string message = string.Format(template, error.Message, error.File, error.LineNumber, error.ProjectFile);
-            NotificationWriter.Write(message);
+            this.notificationService.AddMessage(message);
         }
 
         /// <summary>
@@ -96,9 +107,9 @@ namespace GitScc.Blinkbox
         /// </param>
         public void HandleWarning(BuildWarningEventArgs warning)
         {
-            string template = "Warning: \"{0}\"" + newLineIndent + "in file {1} line {2}" + newLineIndent + "in project {3}";
+            string template = "Warning: \"{0}\"" + NewLineIndent + "in file {1} line {2}" + NewLineIndent + "in project {3}";
             string message = string.Format(template, warning.Message, warning.File, warning.LineNumber, warning.ProjectFile);
-            NotificationWriter.Write(message);
+            this.notificationService.AddMessage(message);
         }
 
         /// <summary>

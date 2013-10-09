@@ -10,14 +10,14 @@
        <Types>
         <Type Name="JumpItemsRejectedEventArgs" Kind="Class" Accessibility="Public" ExternallyVisible="True">
          <Messages>
-          <Message Id="Args" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Active" Created="2012-07-18 11:53:12Z" FixCategory="Breaking">
+          <Message Id="Args" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Active" Created="2012-10-08 12:40:27Z" FixCategory="Breaking">
            <Issue Name="Type" Certainty="75" Level="CriticalWarning">Correct the spelling of 'Args' in type name 'JumpItemsRejectedEventArgs'.</Issue>
           </Message>
          </Messages>
         </Type>
         <Type Name="JumpItemsRemovedEventArgs" Kind="Class" Accessibility="Public" ExternallyVisible="True">
          <Messages>
-          <Message Id="Args" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Active" Created="2012-07-18 11:53:12Z" FixCategory="Breaking">
+          <Message Id="Args" TypeName="IdentifiersShouldBeSpelledCorrectly" Category="Microsoft.Naming" CheckId="CA1704" Status="Active" Created="2012-10-08 12:40:27Z" FixCategory="Breaking">
            <Issue Name="Type" Certainty="75" Level="CriticalWarning">Correct the spelling of 'Args' in type name 'JumpItemsRemovedEventArgs'.</Issue>
           </Message>
          </Messages>
@@ -30,7 +30,7 @@
          <Members>
           <Member Name="#.ctor()" Kind="Method" Static="False" Accessibility="Private" ExternallyVisible="False">
            <Messages>
-            <Message TypeName="SecurityRuleSetLevel2MethodsShouldNotBeProtectedWithLinkDemandsFxCopRule" Category="Microsoft.Security" CheckId="CA2135" Status="Active" Created="2012-07-18 11:53:12Z" FixCategory="NonBreaking">
+            <Message TypeName="SecurityRuleSetLevel2MethodsShouldNotBeProtectedWithLinkDemandsFxCopRule" Category="Microsoft.Security" CheckId="CA2135" Status="Active" Created="2012-10-08 12:40:27Z" FixCategory="NonBreaking">
              <Issue Certainty="50" Level="CriticalWarning" Path="C:\dev\github\Git-Source-Control-Provider\GitUI\Microsoft.Windows.Shell\Standard" File="NativeMethods.cs" Line="1340">'SafeFindHandle.SafeFindHandle()' is protected with a LinkDemand for 'SecurityPermissionAttribute'.  In the level 2 security rule set, it should be protected by being security critical instead.  Remove the LinkDemand and mark 'SafeFindHandle.SafeFindHandle()' security critical.</Issue>
             </Message>
            </Messages>

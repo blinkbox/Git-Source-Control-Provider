@@ -21,7 +21,7 @@ namespace GitScc
         Copied
     }
 
-    public class GitFile : INotifyPropertyChanged
+    public partial class GitFile : INotifyPropertyChanged
     {
         public GitFileStatus Status { get; set; }
         public string FileName { get; set; }

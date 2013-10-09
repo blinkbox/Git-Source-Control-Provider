@@ -1,38 +1,40 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="CommandIds.cs" company="blinkbox">
+// <copyright file="CommandId.bb.cs" company="blinkbox">
 //   TODO: Update copyright text.
 // </copyright>
-// <summary>
-//   
-// </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace GitScc.Blinkbox
+namespace GitScc
 {
     /// <summary>
     /// Defines the command ids used for blinkbox commands in the Visual Studio environment.
     /// </summary>
-    public class CommandIds
+    public static partial class CommandId
     {
-        /// <summary>
-        /// Identifies the CommitAndDeploy command.
-        /// </summary>
-        public const int BlinkboxCommitAndDeployId = 0x117;
-
         /// <summary>
         /// Identifies the Deploy command.
         /// </summary>
-        public const int BlinkboxDeployId = 0x118;
+        public const int BlinkboxDeployId = 0x117;
 
         /// <summary>
-        /// Identifies the GitTfsMenu command.
+        /// Identifies the SubmitTest command.
         /// </summary>
-        public const int GitTfsMenu = 0x401;
+        public const int SubmitTestButtonId = 0x118;
 
         /// <summary>
-        /// Identifies the GitTfsMenuGroup command.
+        /// Identifies the SubmitTest command.
         /// </summary>
-        public const int GitTfsMenuGroup = 0x402;
+        public const int UnitTestButtonId = 0x119;
+
+        /// <summary>
+        /// Identifies the ToolsMenu command.
+        /// </summary>
+        public const int ToolsMenu = 0x401;
+
+        /// <summary>
+        /// Identifies the ToolsMenuGroup command.
+        /// </summary>
+        public const int ToolsMenuGroup = 0x402;
 
         /// <summary>
         /// Identifies the GitTfsCheckin command.
@@ -48,5 +50,15 @@ namespace GitScc.Blinkbox
         /// Identifies the GitTfs CleanWorkspaces command.
         /// </summary>
         public const int GitTfsCleanWorkspacesButtonId = 0x405;
+
+        /// <summary>
+        /// Identifies the GitTfs Review command.
+        /// </summary>
+        public const int GitTfsReviewButtonId = 0x406;
+
+        /// <summary>
+        /// Identifies the GitTfs Cancel Review command.
+        /// </summary>
+        public const int GitTfsCancelReviewButtonId = 0x407;
     }
 }

@@ -7,7 +7,7 @@ namespace GitScc
     /// by the client package. This list of IDs must match the set of IDs defined inside the
     /// VSCT file.
     /// </summary>
-    static class CommandId
+    static partial class CommandId
     {
         // Define the list a set of public static members.
         public const int icmdSccCommandRefresh = 0x101;

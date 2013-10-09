@@ -18,7 +18,7 @@ using System.Diagnostics;
 
 namespace GitScc
 {
-    public class GitFileStatusTracker : IDisposable
+    public partial class GitFileStatusTracker : IDisposable
     {
         private string initFolder;
 
@@ -107,7 +107,10 @@ namespace GitScc
                                                   .Select(line => new IgnoreRule(line)).ToList();
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Log.WriteLine("ReadIgnoreFile: {0}\r\n{1}", this.initFolder, ex.ToString());
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -352,7 +355,7 @@ namespace GitScc
             return GetRelativePath(repository.WorkTree, fileName).Replace("\\", "/");
         }
 
-        private string GetRelativeFileName(string fileName)
+        public string GetRelativeFileName(string fileName)
         {
             return GetRelativePath(repository.WorkTree, fileName);
         }
@@ -527,7 +530,8 @@ namespace GitScc
             {
                 try
                 {
-                    GitBash.Run(string.Format("checkout {0} {1}", (createNew ? "-b" : ""), branch), this.GitWorkingDirectory);
+                    var msg = GitBash.Run(string.Format("checkout {0} {1}", (createNew ? "-b" : ""), branch), this.GitWorkingDirectory);
+                    if (msg.Contains("fatal:")) throw new Exception(msg);
                 }
                 catch (Exception ex)
                 {
@@ -650,7 +654,7 @@ namespace GitScc
             this.changedFiles = null;
         }
 
-        public string Commit(string message)
+        public string Commit(string message, bool amend = false, bool signoff = false)
         {
             if (!this.HasGitRepository) return null;
 
@@ -660,50 +664,20 @@ namespace GitScc
             string msg = "";
             if (GitBash.Exists)
             {
-                var msgFile = Path.Combine(this.repository.Directory, "COMMITMESSAGE");
-                
+                var msgFile = Path.Combine(this.repository.Directory, "COMMITMESSAGE");               
                 File.WriteAllText(msgFile, message);
 
-                //using (var textWriter = new StreamWriter(msgFile, false, GetCommentEncoding()))
-                //{
-                //    textWriter.Write(message);
-                //}
-
-                msg = GitBash.Run(string.Format("commit -F \"{0}\"", msgFile), this.GitWorkingDirectory);
+                string opt = "";
+                if (amend) opt += "--amend ";
+                if (signoff) opt += "--signoff ";
+                msg = GitBash.Run(string.Format("commit -F \"{0}\" {1}", msgFile, opt), this.GitWorkingDirectory);
                 if (msg.IndexOf('\n') > 0) msg = msg.Split('\n')[0];
                 File.Delete(msgFile);
             }
             else
             {
                 var git = new Git(this.repository);
-                var rev = git.Commit().SetMessage(message).Call();
-                msg = rev.Name;
-            }
-            Refresh();
-
-            return msg;
-        }
-
-        public string AmendCommit(string message)
-        {
-            if (!HasGitRepository) return null;
-
-            if (string.IsNullOrEmpty(message))
-                throw new ArgumentException("Commit message must not be null or empty!", "message");
-
-            string msg = "";
-            if (GitBash.Exists)
-            {
-                var msgFile = Path.Combine(this.repository.Directory, "COMMITMESSAGE");
-                File.WriteAllText(msgFile, message);
-                msg = GitBash.Run(string.Format("commit --amend -F \"{0}\"", msgFile), this.GitWorkingDirectory);
-                if (msg.IndexOf('\n') > 0) msg = msg.Split('\n')[0];
-                File.Delete(msgFile);
-            }
-            else
-            {
-                var git = new Git(this.repository);
-                var rev = git.Commit().SetAmend(true).SetMessage(message).Call();
+                var rev = git.Commit().SetMessage(message).SetAmend(amend).Call();
                 msg = rev.Name;
             }
             Refresh();
@@ -716,14 +690,22 @@ namespace GitScc
             get
             {
                 if (!HasGitRepository) return null;
-                var headId = this.repository.Resolve(Constants.HEAD);
-                if (headId != null)
+
+                if (GitBash.Exists)
                 {
-                    var revWalk = new RevWalk(this.repository);
-                    var commit = revWalk.ParseCommit(headId);
-                    return commit == null ? null : commit.GetFullMessage();
+                    return GitBash.Run("log -1 --format=%s\r\n\r\n%b", this.GitWorkingDirectory);
                 }
-                return null;
+                else
+                {
+                    var headId = this.repository.Resolve(Constants.HEAD);
+                    if (headId != null)
+                    {
+                        var revWalk = new RevWalk(this.repository);
+                        var commit = revWalk.ParseCommit(headId);
+                        return commit == null ? null : commit.GetFullMessage();
+                    }
+                    return null;
+                }
             }
         }
 
@@ -746,6 +728,28 @@ namespace GitScc
         #endregion
 
         #region Diff file
+
+        private bool IsBinaryFile(string fileName)
+        {
+            FileStream fs = File.OpenRead(fileName);
+            try
+            {
+                int len = Convert.ToInt32(fs.Length);
+                if (len > 1000) len = 1000;
+                byte[] bytes = new byte[len];
+                fs.Read(bytes, 0, len);
+                for (int i = 0; i < len - 1; i++)
+                {
+                    if (bytes[i] == 0) return true;
+                }
+                return false;
+            }
+            finally
+            {
+                fs.Close();
+            }
+        }
+
         /// <summary>
         /// Diff working file with last commit
         /// </summary>
@@ -753,16 +757,23 @@ namespace GitScc
         /// <returns>diff file in temp folder</returns>
         public string DiffFile(string fileName)
         {
+            var tmpFileName = Path.ChangeExtension(Path.GetTempFileName(), ".diff");
+
             try
             {
                 if (!this.HasGitRepository) return "";
 
-                var tmpFileName = Path.ChangeExtension(Path.GetTempFileName(), ".diff");
                 var status = GetFileStatus(fileName);
                 if (head == null || status == GitFileStatus.New || status == GitFileStatus.Added)
                 {
                     tmpFileName = Path.ChangeExtension(tmpFileName, Path.GetExtension(fileName));
                     File.Copy(GetFullPath(fileName), tmpFileName);
+
+                    if(IsBinaryFile(tmpFileName))
+                    {
+                        File.Delete(tmpFileName);
+                        File.WriteAllText(tmpFileName, "Binary file: " + fileName);
+                    }
                     return tmpFileName;
                 }
 
@@ -791,27 +802,14 @@ namespace GitScc
                         df.Format(list, a, b);
                         df.Flush();
                     }
-
-                    //using (Stream mstream = new MemoryStream(),
-                    //              stream = new BufferedStream(mstream))
-                    //{
-                    //    DiffFormatter df = new DiffFormatter(stream);
-                    //    df.Format(list, a, b);
-                    //    df.Flush();
-                    //    stream.Seek(0, SeekOrigin.Begin);
-                    //    var ret = new StreamReader(stream).ReadToEnd();
-                    //    File.WriteAllText(tmpFileName, ret);
-                    //}
                 }
-
-                return tmpFileName;
             }
             catch (Exception ex)
             {
-                Log.WriteLine("Refresh: {0}\r\n{1}", this.initFolder, ex.ToString());
-
-                return "";
+                Log.WriteLine("DiffFile: {0}\r\n{1}", this.initFolder, ex.ToString());
+                //File.WriteAllText(tmpFileName, ex.ToString());
             }
+            return tmpFileName;
         }
 
         public string DiffFile(string fileName, string commitId1, string commitId2)
@@ -956,7 +954,7 @@ namespace GitScc
             {
                 if (repositoryGraph == null)
                 {
-                    repositoryGraph = HasGitRepository ? new RepositoryGraph(this.repository) : null;
+                    repositoryGraph = HasGitRepository ? new RepositoryGraph(this.GitWorkingDirectory) : null;
                 }
                 return repositoryGraph;
             }
@@ -1137,6 +1135,50 @@ namespace GitScc
                 return configs ?? new Dictionary<string, string>();
             }
         }
+
+        public string Blame(string fileName)
+        {
+            if (!this.HasGitRepository) return "";
+
+            var tmpFileName = Path.ChangeExtension(Path.GetTempFileName(), ".blame");
+
+            if (GitBash.Exists)
+            {
+                var fileNameRel = GetRelativeFileName(fileName);
+                GitBash.RunCmd(string.Format("blame -M -w -- \"{0}\" > \"{1}\"", fileNameRel, tmpFileName), this.GitWorkingDirectory);
+            }
+            return tmpFileName;
+        }
+
+        public IEnumerable<string> GetCommitsForFile(string fileName)
+        {
+            if (!this.HasGitRepository || !GitBash.Exists) return new string[0];
+            var fileNameRel = GetRelativeFileName(fileName);
+
+            var output = GitBash.Run(string.Format("log -z --ignore-space-change --pretty=format:%H -- \"{0}\"", fileNameRel), this.GitWorkingDirectory);
+            return output.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        public void AddIgnoreItem(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName) || !this.HasGitRepository) return;
+            var ignoreFile = GetFullPath(Path.Combine(this.GitWorkingDirectory, ".gitignore"));
+            if (!File.Exists(ignoreFile))
+            {
+                using (StreamWriter sw = File.CreateText(ignoreFile))
+                {
+                    sw.WriteLine(fileName);
+                }
+            }
+            else
+            {
+                using (StreamWriter sw = File.AppendText(ignoreFile))
+                {
+                    sw.WriteLine();
+                    sw.Write(fileName);
+                }
+            }
+        }
     }
 
     public abstract class Log
@@ -1147,11 +1189,11 @@ namespace GitScc
 
         public static void WriteLine(string format, params object[] objects)
         {
-#if(DEBUG)
+//#if(DEBUG)
             var msg = string.Format(format, objects);
             msg = string.Format("{0} {1}\r\n\r\n", DateTime.UtcNow.ToString(), msg);
             File.AppendAllText(logFileName, msg);
-#endif
+//#endif
         }
     }
 }

@@ -8,11 +8,13 @@ using System.Windows.Controls;
 
 namespace GitScc
 {
+    using GitScc.Blinkbox.UI;
+
     /// <summary>
     /// Summary description for SccProviderToolWindow.
     /// </summary>
     [Guid("75EDECF4-68D8-4B7B-92A9-5915461DA6D9")]
-    public class PendingChangesToolWindow : ToolWindowPane
+    public partial class PendingChangesToolWindow : ToolWindowPane
     {
         private SccProviderService sccProviderService;
         protected UserControl control;
@@ -33,7 +35,7 @@ namespace GitScc
         protected override void Initialize()
         {
             base.Initialize();
-            control = new PendingChangesView();
+            control = new BBPendingChanges();
 
             // This is the user control hosted by the tool window; Note that, even if this class implements IDisposable,
             // we are not calling Dispose on this object. This is because ToolWindowPane calls Dispose on 
@@ -67,12 +69,12 @@ namespace GitScc
 
         internal void OnCommitCommand()
         {
-            ((PendingChangesView)control).Commit();
+            ((BBPendingChanges)control).Commit();
         }
 
         internal void OnAmendCommitCommand()
         {
-            ((PendingChangesView)control).AmendCommit();
+            ((BBPendingChanges)control).AmendCommit();
         }
 
         //private void OnRefreshCommand(object sender, EventArgs e)
@@ -96,7 +98,7 @@ namespace GitScc
 
                 if (!GitSccOptions.Current.DisableAutoRefresh || force || tracker == null)
                 {
-                    ((PendingChangesView)control).Refresh(tracker);
+                    ((BBPendingChanges)control).RefreshPendingChanges(tracker);
                 }
                 if (GitSccOptions.Current.DisableAutoRefresh)
                 {

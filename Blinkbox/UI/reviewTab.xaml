@@ -1,0 +1,58 @@
+﻿<UserControl x:Class="GitScc.Blinkbox.UI.ReviewTab"
+			 xmlns:avalonEdit="clr-namespace:ICSharpCode.AvalonEdit;assembly=ICSharpCode.AvalonEdit"     
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <Grid x:Name="ReviewTabGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="520" />
+            <ColumnDefinition Width="2" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.Background>
+            <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                <GradientStop Color="#FFC5E8F8" Offset="1" />
+                <GradientStop Color="White" Offset="0" />
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"
+					      VerticalAlignment="Stretch" HorizontalAlignment="Left" Name="reviewTabHorizontalSplitter" Width="4" ResizeDirection="Columns" />
+
+        <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Name="reviewContentGrid">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+
+            <Label Content="The following files differ from TFS" Height="28" HorizontalAlignment="Left" Name="reviewHelpLabel" VerticalAlignment="Center" 
+			       Margin="12,0,0,0" Foreground="#FF333333" Width="189" ToolTip="select file to view, double click to diff in tortoise." />
+
+            <DataGrid AutoGenerateColumns="False" Grid.Row="2" HorizontalAlignment="Stretch" Margin="10,0,10,10" Name="reviewList" VerticalAlignment="Stretch"
+					      GridLinesVisibility="None"  Foreground="#FF333333" IsReadOnly="True" SelectedValuePath="FileName"
+					      SelectionMode="Single" SelectionChanged="Review_SelectionChanged" MouseDoubleClick="Review_MouseDoubleClick"
+					      CanUserResizeRows="False" CanUserDeleteRows="False" CanUserAddRows="False" CanUserReorderColumns="False" RowHeaderWidth="0">
+
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" CanUserResize="False" Width="100" />
+                    <DataGridTextColumn Header="File" Binding="{Binding FileName}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <Grid Grid.Column="2" Grid.Row="1" Background="White">
+            <avalonEdit:TextEditor x:Name="ReviewDiff" FontFamily="Consolas" FontSize="10pt" MouseDoubleClick="Diff_MouseDoubleClick"/>
+        </Grid>
+
+    </Grid>
+</UserControl>

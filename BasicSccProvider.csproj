@@ -34,7 +34,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
@@ -44,12 +44,8 @@
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="Microsoft.Build" />
-    <Reference Include="Microsoft.Build.Engine" />
     <Reference Include="Microsoft.Build.Framework" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.VisualStudio.ComponentModelHost, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Editor, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop, Version=7.1.40304.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.Shell.10.0">
       <HintPath>C:\Program Files (x86)\Microsoft Visual Studio 2010 SDK\VisualStudioIntegration\Common\Assemblies\v4.0\Microsoft.VisualStudio.Shell.10.0.dll</HintPath>
@@ -64,44 +60,69 @@
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Text.UI, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.TextManager.Interop, Version=7.1.40304.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="PresentationFramework.Aero" />
-    <Reference Include="ReachFramework" />
     <Reference Include="System" />
-    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Data" />
     <Reference Include="System.Design" />
-    <Reference Include="System.Printing" />
+    <Reference Include="System.Management.Automation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Program Files\Reference Assemblies\Microsoft\WindowsPowerShell\v1.0\System.Management.Automation.dll</HintPath>
+    </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.XML" />
+    <Reference Include="System.Xml.Linq" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Blinkbox\CommandIds.cs" />
+    <Compile Include="BasicSccProvider.bb.cs">
+      <DependentUpon>BasicSccProvider.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Blinkbox\Data\AheadBehind.cs" />
+    <Compile Include="Blinkbox\Data\CommandException.cs" />
+    <Compile Include="Blinkbox\Data\Deployment.cs" />
+    <Compile Include="Blinkbox\Options\UserSettings.cs" />
+    <Compile Include="Blinkbox\Options\SolutionUserSettings.cs" />
+    <Compile Include="Blinkbox\Options\SettingsBase.cs" />
+    <Compile Include="Blinkbox\Options\SolutionSettings.cs" />
+    <Compile Include="Blinkbox\Data\RefreshArgs.cs" />
+    <Compile Include="Blinkbox\Powershell\PowershellHost.cs" />
+    <Compile Include="Blinkbox\Powershell\PowershellHostUserInterface.cs" />
+    <Compile Include="Blinkbox\Powershell\PowershellRawUserInterface.cs" />
+    <Compile Include="Blinkbox\UI\BBPendingChanges.xaml.cs">
+      <DependentUpon>BBPendingChanges.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Blinkbox\UI\deployTab.xaml.cs">
+      <DependentUpon>deployTab.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Blinkbox\UI\ReviewTab.xaml.cs">
+      <DependentUpon>ReviewTab.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Blinkbox\UI\SettingsTab.xaml.cs">
+      <DependentUpon>SettingsTab.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Blinkbox\UI\TestTab.xaml.cs">
+      <DependentUpon>TestTab.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="CommandId.bb.cs">
+      <DependentUpon>CommandId.cs</DependentUpon>
+    </Compile>
     <Compile Include="Blinkbox\BuildNotificationLogger.cs" />
-    <Compile Include="Blinkbox\NotificationWriter.cs" />
-    <Compile Include="Blinkbox\Events\BlinkboxSccHooks.cs" />
-    <Compile Include="Blinkbox\BlinkboxScc.cs" />
-    <Compile Include="Blinkbox\Events\OnPackageInitialiseArgs.cs" />
-    <Compile Include="Blinkbox\Events\OnRegisterCommandsArgs.cs" />
-    <Compile Include="Blinkbox\Events\OnCommitArgs.cs" />
-    <Compile Include="Blinkbox\GitTfs.cs" />
+    <Compile Include="Blinkbox\SccCommand.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Blinkbox\DeploymentService.cs" />
+    <Compile Include="Blinkbox\GitCommand.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Blinkbox\DevelopmentService.cs" />
+    <Compile Include="Blinkbox\NotificationService.cs" />
+    <Compile Include="Blinkbox\GitTfsCommand.cs" />
     <Compile Include="Blinkbox\Options\BlinkboxSccOptions.cs" />
     <Compile Include="Blinkbox\Options\BlinkboxOptionsControl.cs">
       <SubType>UserControl</SubType>
@@ -109,7 +130,11 @@
     <Compile Include="Blinkbox\Options\BlinkboxOptionsPage.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="PendingChangesView.bb.cs" >
+    <Compile Include="Blinkbox\SccHelperService.cs" />
+    <Compile Include="SccProviderService.bb.cs">
+      <DependentUpon>SccProviderService.cs</DependentUpon>
+    </Compile>
+    <Compile Include="PendingChangesView.bb.cs">
       <DependentUpon>PendingChangesView.xaml</DependentUpon>
     </Compile>
     <Compile Include="GitToolCommands.cs" />
@@ -195,6 +220,26 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Blinkbox\UI\BBPendingChanges.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Blinkbox\UI\deployTab.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Blinkbox\UI\ReviewTab.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Blinkbox\UI\SettingsTab.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Blinkbox\UI\TestTab.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="PendingChangesView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -224,10 +269,6 @@
     <ProjectReference Include="ngit\NGit\NGit.csproj">
       <Project>{E3BFF8B4-189C-496A-A817-7E8B31E22B91}</Project>
       <Name>NGit</Name>
-    </ProjectReference>
-    <ProjectReference Include="ngit\NSch\NSch.csproj">
-      <Project>{A19E6F3F-A25B-4B01-8922-CF0CC35C781D}</Project>
-      <Name>NSch</Name>
     </ProjectReference>
     <ProjectReference Include="ngit\Sharpen\Sharpen.csproj">
       <Project>{72944A6C-45FF-4EF8-B349-8C9CABF519D4}</Project>
