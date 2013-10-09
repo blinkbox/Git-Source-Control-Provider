@@ -168,20 +168,19 @@ namespace GitScc.Blinkbox
                         return;
                     }
 
-                    var browserSets = SolutionUserSettings.Current.TestBrowserSets.Split(new[] { ",", ".", "|", ";" }, StringSplitOptions.RemoveEmptyEntries);
-
                     var args = new Dictionary<string, object>
                         {
                             { "version", lastDeployment.BuildLabel },
                             { "featuresDirectory", featureDirectory },
                             { "featureSubPath", SolutionUserSettings.Current.FeatureSubPath },
                             { "branch", SolutionSettings.Current.CurrentBranch },
-                            { "userName", SolutionUserSettings.Current.TestSwarmUsername },
-                            { "password", SolutionUserSettings.Current.TestSwarmPassword },
+                            { "projectId", SolutionUserSettings.Current.TestSwarmProjectId },
+                            { "authToken", SolutionUserSettings.Current.TestSwarmAuthToken },
+                            { "testSwarmUrl", SolutionUserSettings.Current.TestSwarmUrl },
                             { "appUrl", lastDeployment.AppUrl },
                             { "tag", SolutionUserSettings.Current.TestSwarmTags },
                             { "jobName", lastDeployment.Message + " (" + lastDeployment.BuildLabel + ")" },
-                            { "browserSets", browserSets },
+                            { "browserSets", SolutionUserSettings.Current.TestBrowserSets },
                             { "runnerMode", SolutionUserSettings.Current.TestRunnerMode }
                         };
 

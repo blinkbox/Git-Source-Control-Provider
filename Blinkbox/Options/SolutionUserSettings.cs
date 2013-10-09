@@ -49,16 +49,22 @@ namespace GitScc.Blinkbox.Options
         }
 
         /// <summary>
-        /// Gets or sets the test swarm username.
+        /// Gets or sets the test swarm project id.
         /// </summary>
-        /// <value>The test swarm username.</value>
-        public string TestSwarmUsername { get; set; }
+        /// <value>The test swarm project id.</value>
+        public string TestSwarmProjectId { get; set; }
 
         /// <summary>
-        /// Gets or sets the test swarm password.
+        /// Gets or sets the test swarm auth token.
         /// </summary>
-        /// <value>The test swarm password.</value>
-        public string TestSwarmPassword { get; set; }
+        /// <value>The test swarm auth token.</value>
+        public string TestSwarmAuthToken { get; set; }
+
+        /// <summary>
+        /// Gets or sets the test swarm URL.
+        /// </summary>
+        /// <value>The test swarm URL.</value>
+        public string TestSwarmUrl { get; set; }
 
         /// <summary>
         /// Gets or sets the test swarm tags.
@@ -124,13 +130,23 @@ namespace GitScc.Blinkbox.Options
         /// </summary>
         protected override void Init()
         {
-            this.TestSwarmPassword = string.IsNullOrEmpty(this.TestSwarmPassword) ? "1234$abcd" : this.TestSwarmPassword;
-            this.TestSwarmUsername = string.IsNullOrEmpty(this.TestSwarmUsername) ? Environment.UserName : this.TestSwarmUsername;
+            this.TestSwarmProjectId = string.IsNullOrEmpty(this.TestSwarmProjectId)
+                ? string.Empty
+                : this.TestSwarmProjectId;
+
+            this.TestSwarmAuthToken = string.IsNullOrEmpty(this.TestSwarmAuthToken)
+                ? string.Empty
+                : this.TestSwarmAuthToken;
+
             this.SubmitTestsOnDeploy = this.SubmitTestsOnDeploy ?? true;
 
             // An update to the solution settings should override the user settings. 
-            this.TestSwarmTags = string.IsNullOrEmpty(this.TestSwarmTags) 
-                ? SolutionSettings.Current.TestSwarmTags 
+            this.TestSwarmUrl = string.IsNullOrEmpty(this.TestSwarmUrl)
+                ? SolutionSettings.Current.TestSwarmUrl
+                : this.TestSwarmUrl;
+
+            this.TestSwarmTags = string.IsNullOrEmpty(this.TestSwarmTags)
+                ? SolutionSettings.Current.TestSwarmTags
                 : this.TestSwarmTags;
 
             this.TestBrowserSets = string.IsNullOrEmpty(this.TestBrowserSets) 

@@ -35,9 +35,6 @@ namespace GitScc.Blinkbox.UI
             {
                 sccProvider.OnSolutionOpen += (s, a) => this.RefreshBindings();
             }
-
-            // PasswordBoxs dont support databinding - do it manually. 
-            testSwarmPassword.PasswordChanged += (s, e) => { solutionUserSettings.TestSwarmPassword = ((PasswordBox)s).Password; };
         }
 
         /// <summary>
@@ -48,7 +45,6 @@ namespace GitScc.Blinkbox.UI
             // TODO: proper way to do this?
             grid.DataContext = null;
             grid.DataContext = this;
-            testSwarmPassword.Password = this.solutionUserSettings.TestSwarmPassword;
         }
 
         /// <summary>
@@ -93,7 +89,7 @@ namespace GitScc.Blinkbox.UI
         /// <param name="e">The <see cref="System.Windows.RoutedEventArgs"/> instance containing the event data.</param>
         private void Hyperlink_Click(object sender, RoutedEventArgs e)
         {
-            BasicSccProvider.LaunchBrowser(SolutionSettings.Current.TestSwarmUrl + "/user/" + SolutionUserSettings.Current.TestSwarmUsername);
+            BasicSccProvider.LaunchBrowser(SolutionSettings.Current.TestSwarmUrl + "/project/" + SolutionUserSettings.Current.TestSwarmProjectId);
         }
 
     }
